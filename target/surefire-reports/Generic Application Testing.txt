@@ -1,8 +1,9 @@
 -------------------------------------------------------------------------------
 Test set: Generic Application Testing
 -------------------------------------------------------------------------------
-Tests run: 4, Failures: 0, Errors: 1, Skipped: 0, Time elapsed: 177.798 s <<< FAILURE! - in Generic Application Testing
-Generic Application Testing.Execute various test scenarios #2  Time elapsed: 72.339 s  <<< ERROR!
-org.awaitility.core.ConditionTimeoutException: Condition steps.GenericSteps$$Lambda/0x000001246a34d4d8 was not fulfilled within 30 seconds.
+Tests run: 1, Failures: 0, Errors: 1, Skipped: 0, Time elapsed: 72.917 s <<< FAILURE! - in Generic Application Testing
+Generic Application Testing.Execute various test scenarios  Time elapsed: 72.917 s  <<< ERROR!
+java.lang.RuntimeException: Failed step 'Action 'navigate' on page 'N/A' with value 'N/A', target page 'login'' timed out after 30 seconds
+Caused by: org.awaitility.core.ConditionTimeoutException: Condition steps.GenericSteps$$Lambda/0x0000021ac734dd80 was not fulfilled within 30 seconds.
 Caused by: java.util.concurrent.TimeoutException
 

@@ -141,7 +141,7 @@ public class GenericSteps {
     }
 
     private void initializeDriver(ChromeOptions options) {
-        logger.debug("Initializing ChromeDriver");
+        logger.debug("Initializing ChromeDriver with options: {}", options.getCapability("goog:chromeOptions"));
         if (driver != null) {
             try {
                 driver.quit();
@@ -149,12 +149,18 @@ public class GenericSteps {
                 logger.warn("Failed to quit existing driver cleanly", e);
             }
         }
-        driver = new ChromeDriver(options);
-        driver.manage().timeouts().implicitlyWait(
-                Long.parseLong(ConfigManager.getConfig("implicitWait")),
-                TimeUnit.SECONDS
-        );
-        pages.clear();
+        try {
+            driver = new ChromeDriver(options);
+            driver.manage().timeouts().implicitlyWait(
+                    Long.parseLong(ConfigManager.getConfig("implicitWait")),
+                    TimeUnit.SECONDS
+            );
+            pages.clear();
+            logger.debug("ChromeDriver initialized successfully");
+        } catch (Exception e) {
+            logger.error("Failed to initialize ChromeDriver", e);
+            throw new RuntimeException("ChromeDriver initialization failed", e);
+        }
     }
 
     @Given("user is on the {string} page")
@@ -163,6 +169,9 @@ public class GenericSteps {
         String expectedPath = ConfigManager.getPageProperty(pageId, "path");
         logger.info("Navigating to page: {} at URL: {}, expecting path: {}", pageId, url, expectedPath);
         executeWithRetry("Navigate to page '" + pageId + "' at URL: " + url, () -> {
+            if (driver == null) {
+                throw new IllegalStateException("Driver is null before navigation");
+            }
             logger.debug("Loading URL: {}", url);
             driver.get(url);
             Awaitility.await()
@@ -304,7 +313,12 @@ public class GenericSteps {
                         String targetPath = ConfigManager.getPageProperty(targetPage, "path");
                         Awaitility.await()
                                 .atMost(Duration.ofSeconds(getTimeout(action)))
-                                .until(() -> driver.getCurrentUrl().contains(targetPath));
+                                .until(() -> {
+                                    if (driver == null) {
+                                        throw new IllegalStateException("Driver is null during navigation check");
+                                    }
+                                    return driver.getCurrentUrl().contains(targetPath);
+                                });
                         loadPageElements(targetPage, action);
                         break;
                     case "check":
@@ -632,30 +646,40 @@ public class GenericSteps {
     private void executeWithRetry(String stepDescription, Runnable action) {
         AtomicReference<Throwable> lastException = new AtomicReference<>();
         logger.info("Attempting step: {}", stepDescription);
-        Awaitility.await()
-                .atMost(Duration.ofSeconds(retryAttempts * (retryDelaySeconds + 1)))
-                .pollInterval(retryDelaySeconds, TimeUnit.SECONDS)
-                .ignoreException(UnreachableBrowserException.class) // Retry on browser crash
-                .until(() -> {
-                    try {
-                        action.run();
-                        logger.debug("Step succeeded: {}", stepDescription);
-                        return true;
-                    } catch (UnreachableBrowserException e) {
-                        logger.warn("Browser unreachable during step '{}', reinitializing driver", stepDescription, e);
-                        ChromeOptions options = new ChromeOptions();
-                        String chromeArgs = ConfigManager.getConfig("webdriver.chrome.args");
-                        if (chromeArgs != null && !chromeArgs.isEmpty()) {
-                            options.addArguments(chromeArgs.split(","));
+        try {
+            Awaitility.await()
+                    .conditionEvaluationListener(condition -> {
+                        if (condition.getRemainingTimeInMS() <= 0) {
+                            logger.error("Step '{}' timed out after {} seconds", stepDescription, retryAttempts * (retryDelaySeconds + 1));
                         }
-                        initializeDriver(options);
-                        throw e; // Trigger retry
-                    } catch (Throwable e) {
-                        lastException.set(e);
-                        logger.warn("Retry attempt failed for step '{}'", stepDescription, e);
-                        return false;
-                    }
-                });
+                    })
+                    .atMost(Duration.ofSeconds(retryAttempts * (retryDelaySeconds + 1)))
+                    .pollInterval(retryDelaySeconds, TimeUnit.SECONDS)
+                    .ignoreException(UnreachableBrowserException.class) // Retry on browser crash
+                    .until(() -> {
+                        try {
+                            action.run();
+                            logger.debug("Step succeeded: {}", stepDescription);
+                            return true;
+                        } catch (UnreachableBrowserException e) {
+                            logger.warn("Browser unreachable during step '{}', reinitializing driver", stepDescription, e);
+                            ChromeOptions options = new ChromeOptions();
+                            String chromeArgs = ConfigManager.getConfig("webdriver.chrome.args");
+                            if (chromeArgs != null && !chromeArgs.isEmpty()) {
+                                options.addArguments(chromeArgs.split(","));
+                            }
+                            initializeDriver(options);
+                            throw e; // Trigger retry
+                        } catch (Throwable e) {
+                            lastException.set(e);
+                            logger.warn("Retry attempt failed for step '{}'", stepDescription, e);
+                            return false;
+                        }
+                    });
+        } catch (org.awaitility.core.ConditionTimeoutException e) {
+            String errorMessage = "Failed step '" + stepDescription + "' timed out after " + (retryAttempts * (retryDelaySeconds + 1)) + " seconds";
+            throw new RuntimeException(errorMessage, lastException.get() != null ? lastException.get() : e);
+        }
         if (lastException.get() != null) {
             throw new RuntimeException("Failed step '" + stepDescription + "' after " + retryAttempts + " attempts", lastException.get());
         }

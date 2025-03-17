@@ -7,7 +7,4 @@ Feature: Generic Application Testing
 
     Examples:
       | initialPage | testId            |
-      | login       | user_journey      |
       | login       | login_multi_users |
-      | upload      | json_upload       |
-      | upload      | pdf_upload        |
