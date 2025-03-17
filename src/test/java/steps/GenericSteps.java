@@ -32,6 +32,7 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
+import org.openqa.selenium.remote.UnreachableBrowserException;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.Select;
 import org.openqa.selenium.support.ui.WebDriverWait;
@@ -77,13 +78,7 @@ public class GenericSteps {
         if (chromeArgs != null && !chromeArgs.isEmpty()) {
             options.addArguments(chromeArgs.split(","));
         }
-        logger.debug("Initializing ChromeDriver");
-        driver = new ChromeDriver(options);
-        logger.debug("Setting implicit wait to {} seconds", ConfigManager.getConfig("implicitWait"));
-        driver.manage().timeouts().implicitlyWait(
-                Long.parseLong(ConfigManager.getConfig("implicitWait")),
-                TimeUnit.SECONDS
-        );
+        initializeDriver(options);
         retryAttempts = Integer.parseInt(ConfigManager.getConfig("retryAttempts"));
         retryDelaySeconds = Integer.parseInt(ConfigManager.getConfig("retryDelaySeconds"));
 
@@ -130,6 +125,7 @@ public class GenericSteps {
                 }
             }
             driver.quit();
+            driver = null; // Ensure driver is null after quitting
         }
         if (kafkaEnabled) {
             if (kafkaProducer != null) {
@@ -144,12 +140,29 @@ public class GenericSteps {
         }
     }
 
+    private void initializeDriver(ChromeOptions options) {
+        logger.debug("Initializing ChromeDriver");
+        if (driver != null) {
+            try {
+                driver.quit();
+            } catch (Exception e) {
+                logger.warn("Failed to quit existing driver cleanly", e);
+            }
+        }
+        driver = new ChromeDriver(options);
+        driver.manage().timeouts().implicitlyWait(
+                Long.parseLong(ConfigManager.getConfig("implicitWait")),
+                TimeUnit.SECONDS
+        );
+        pages.clear();
+    }
+
     @Given("user is on the {string} page")
     public void userIsOnPage(String pageId) {
         String url = ConfigManager.getConfig("baseUrl") + ConfigManager.getPageProperty(pageId, "path");
         String expectedPath = ConfigManager.getPageProperty(pageId, "path");
         logger.info("Navigating to page: {} at URL: {}, expecting path: {}", pageId, url, expectedPath);
-        executeWithRetry(() -> {
+        executeWithRetry("Navigate to page '" + pageId + "' at URL: " + url, () -> {
             logger.debug("Loading URL: {}", url);
             driver.get(url);
             Awaitility.await()
@@ -174,8 +187,23 @@ public class GenericSteps {
             logger.debug("No test data found, executing actions directly");
             executeActions(actions, null);
         } else {
+            String resetDriverProp = ConfigManager.getConfig(testId + ".resetDriverPerIteration");
+            boolean resetDriverPerIteration = resetDriverProp != null ? Boolean.parseBoolean(resetDriverProp) : false;
+            String startPage = ConfigManager.getConfig(testId + ".startPage");
+            ChromeOptions options = new ChromeOptions();
+            String chromeArgs = ConfigManager.getConfig("webdriver.chrome.args");
+            if (chromeArgs != null && !chromeArgs.isEmpty()) {
+                options.addArguments(chromeArgs.split(","));
+            }
+
             for (Map<String, String> dataRow : testData) {
                 logger.info("Executing test {} with data: {}", testId, dataRow);
+                if (resetDriverPerIteration) {
+                    initializeDriver(options);
+                    if (startPage != null) {
+                        userIsOnPage(startPage);
+                    }
+                }
                 executeActions(actions, dataRow);
             }
         }
@@ -191,8 +219,14 @@ public class GenericSteps {
             String value = ConfigManager.resolveParameters(action.get("value"), data);
             String targetPage = action.get("targetPage");
 
+            String actionDescription = String.format("Action '%s' on page '%s'%s with value '%s'%s",
+                    actionType, pageId != null ? pageId : "N/A",
+                    elementId != null ? ", element '" + elementId + "'" : "",
+                    value != null ? value : "N/A",
+                    targetPage != null ? ", target page '" + targetPage + "'" : "");
+
             logger.debug("Processing action index {}: {}", actionIndex.get(), action);
-            executeWithRetry(() -> {
+            executeWithRetry(actionDescription, () -> {
                 logger.debug("Executing action: {}", action);
                 applyWait(action, pageId, elementId, data);
                 if (elementId != null && pageId != null) {
@@ -397,7 +431,12 @@ public class GenericSteps {
             String elementId = assertion.getOrDefault("element", null);
             String condition = assertion.get("condition");
 
-            executeWithRetry(() -> {
+            String assertionDescription = String.format("Assertion '%s' on page '%s'%s with expected value '%s' and condition '%s'",
+                    type, pageId != null ? pageId : "N/A",
+                    elementId != null ? ", element '" + elementId + "'" : "",
+                    value, condition);
+
+            executeWithRetry(assertionDescription, () -> {
                 logger.debug("Verifying assertion: {}", assertion);
                 applyWait(assertion, pageId, elementId, data);
 
@@ -590,23 +629,35 @@ public class GenericSteps {
         }
     }
 
-    private void executeWithRetry(Runnable action) {
+    private void executeWithRetry(String stepDescription, Runnable action) {
         AtomicReference<Throwable> lastException = new AtomicReference<>();
+        logger.info("Attempting step: {}", stepDescription);
         Awaitility.await()
                 .atMost(Duration.ofSeconds(retryAttempts * (retryDelaySeconds + 1)))
                 .pollInterval(retryDelaySeconds, TimeUnit.SECONDS)
+                .ignoreException(UnreachableBrowserException.class) // Retry on browser crash
                 .until(() -> {
                     try {
                         action.run();
+                        logger.debug("Step succeeded: {}", stepDescription);
                         return true;
+                    } catch (UnreachableBrowserException e) {
+                        logger.warn("Browser unreachable during step '{}', reinitializing driver", stepDescription, e);
+                        ChromeOptions options = new ChromeOptions();
+                        String chromeArgs = ConfigManager.getConfig("webdriver.chrome.args");
+                        if (chromeArgs != null && !chromeArgs.isEmpty()) {
+                            options.addArguments(chromeArgs.split(","));
+                        }
+                        initializeDriver(options);
+                        throw e; // Trigger retry
                     } catch (Throwable e) {
                         lastException.set(e);
-                        logger.warn("Retry attempt failed", e);
+                        logger.warn("Retry attempt failed for step '{}'", stepDescription, e);
                         return false;
                     }
                 });
         if (lastException.get() != null) {
-            throw new RuntimeException("Failed after " + retryAttempts + " attempts", lastException.get());
+            throw new RuntimeException("Failed step '" + stepDescription + "' after " + retryAttempts + " attempts", lastException.get());
         }
     }
 }

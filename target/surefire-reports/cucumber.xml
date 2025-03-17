@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="Cucumber" time="177.964" tests="4" skipped="0" failures="1" errors="0">
+<testsuite name="Cucumber" time="177.838" tests="4" skipped="0" failures="1" errors="0">
 <testcase classname="Generic Application Testing" name="Execute various test scenarios - Example #1.1" time="52.078">
 <system-out><![CDATA[
 Given user is on the "login" page...........................................passed
@@ -7,17 +7,17 @@ When user executes test "user_journey"......................................pass
 Then results match expected outcomes for test "user_journey"................passed
 ]]></system-out>
 </testcase>
-<testcase classname="Generic Application Testing" name="Execute various test scenarios - Example #1.2" time="72.329">
-<failure type="org.awaitility.core.ConditionTimeoutException" message="Condition steps.GenericSteps$$Lambda/0x0000023a5834c400 was not fulfilled within 30 seconds.">
-<![CDATA[org.awaitility.core.ConditionTimeoutException: Condition steps.GenericSteps$$Lambda/0x0000023a5834c400 was not fulfilled within 30 seconds.
+<testcase classname="Generic Application Testing" name="Execute various test scenarios - Example #1.2" time="72.335">
+<failure type="org.awaitility.core.ConditionTimeoutException" message="Condition steps.GenericSteps$$Lambda/0x000001246a34d4d8 was not fulfilled within 30 seconds.">
+<![CDATA[org.awaitility.core.ConditionTimeoutException: Condition steps.GenericSteps$$Lambda/0x000001246a34d4d8 was not fulfilled within 30 seconds.
 	at org.awaitility.core.ConditionAwaiter.await(ConditionAwaiter.java:167)
 	at org.awaitility.core.CallableCondition.await(CallableCondition.java:78)
 	at org.awaitility.core.CallableCondition.await(CallableCondition.java:26)
 	at org.awaitility.core.ConditionFactory.until(ConditionFactory.java:985)
 	at org.awaitility.core.ConditionFactory.until(ConditionFactory.java:954)
-	at steps.GenericSteps.executeWithRetry(GenericSteps.java:598)
-	at steps.GenericSteps.executeActions(GenericSteps.java:195)
-	at steps.GenericSteps.userExecutesTest(GenericSteps.java:179)
+	at steps.GenericSteps.executeWithRetry(GenericSteps.java:639)
+	at steps.GenericSteps.executeActions(GenericSteps.java:229)
+	at steps.GenericSteps.userExecutesTest(GenericSteps.java:207)
 	at ✽.user executes test "login_multi_users"(file:///C:/Development/Sources/selenium-cucumber-test/src/test/resources/features/GenericTests.feature:5)
 Caused by: java.util.concurrent.TimeoutException
 	at java.base/java.util.concurrent.FutureTask.get(FutureTask.java:204)
@@ -28,9 +28,9 @@ Caused by: java.util.concurrent.TimeoutException
 	at org.awaitility.core.CallableCondition.await(CallableCondition.java:26)
 	at org.awaitility.core.ConditionFactory.until(ConditionFactory.java:985)
 	at org.awaitility.core.ConditionFactory.until(ConditionFactory.java:954)
-	at steps.GenericSteps.executeWithRetry(GenericSteps.java:598)
-	at steps.GenericSteps.executeActions(GenericSteps.java:195)
-	at steps.GenericSteps.userExecutesTest(GenericSteps.java:179)
+	at steps.GenericSteps.executeWithRetry(GenericSteps.java:639)
+	at steps.GenericSteps.executeActions(GenericSteps.java:229)
+	at steps.GenericSteps.userExecutesTest(GenericSteps.java:207)
 	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
 	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
 	at io.cucumber.java.Invoker.doInvoke(Invoker.java:66)
@@ -77,14 +77,14 @@ When user executes test "login_multi_users".................................fail
 Then results match expected outcomes for test "login_multi_users"...........skipped
 ]]></system-out>
 </testcase>
-<testcase classname="Generic Application Testing" name="Execute various test scenarios - Example #1.3" time="29.258">
+<testcase classname="Generic Application Testing" name="Execute various test scenarios - Example #1.3" time="29.195">
 <system-out><![CDATA[
 Given user is on the "upload" page..........................................passed
 When user executes test "json_upload".......................................passed
 Then results match expected outcomes for test "json_upload".................passed
 ]]></system-out>
 </testcase>
-<testcase classname="Generic Application Testing" name="Execute various test scenarios - Example #1.4" time="24.218">
+<testcase classname="Generic Application Testing" name="Execute various test scenarios - Example #1.4" time="24.149">
 <system-out><![CDATA[
 Given user is on the "upload" page..........................................passed
 When user executes test "pdf_upload"........................................passed
