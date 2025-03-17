@@ -124,7 +124,11 @@ public class GenericSteps {
                     logger.error("Failed to capture screenshot", e);
                 }
             }
-            driver.quit();
+            try {
+                driver.quit();
+            } catch (Exception e) {
+                logger.warn("Failed to quit driver during teardown", e);
+            }
             driver = null; // Ensure driver is null after quitting
         }
         if (kafkaEnabled) {
@@ -141,25 +145,37 @@ public class GenericSteps {
     }
 
     private void initializeDriver(ChromeOptions options) {
-        logger.debug("Initializing ChromeDriver with options: {}", options.getCapability("goog:chromeOptions"));
-        if (driver != null) {
-            try {
-                driver.quit();
-            } catch (Exception e) {
-                logger.warn("Failed to quit existing driver cleanly", e);
+        int maxAttempts = 3;
+        for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+            logger.debug("Initializing ChromeDriver with options: {} (Attempt {}/{})", options.getCapability("goog:chromeOptions"), attempt, maxAttempts);
+            if (driver != null) {
+                try {
+                    driver.quit();
+                } catch (Exception e) {
+                    logger.warn("Failed to quit existing driver cleanly on attempt {}/{}", attempt, maxAttempts, e);
+                }
             }
-        }
-        try {
-            driver = new ChromeDriver(options);
-            driver.manage().timeouts().implicitlyWait(
-                    Long.parseLong(ConfigManager.getConfig("implicitWait")),
-                    TimeUnit.SECONDS
-            );
-            pages.clear();
-            logger.debug("ChromeDriver initialized successfully");
-        } catch (Exception e) {
-            logger.error("Failed to initialize ChromeDriver", e);
-            throw new RuntimeException("ChromeDriver initialization failed", e);
+            try {
+                driver = new ChromeDriver(options);
+                driver.manage().timeouts().implicitlyWait(
+                        Long.parseLong(ConfigManager.getConfig("implicitWait")),
+                        TimeUnit.SECONDS
+                );
+                pages.clear();
+                logger.debug("ChromeDriver initialized successfully on attempt {}/{}", attempt, maxAttempts);
+                return; // Success, exit the loop
+            } catch (Exception e) {
+                logger.error("Failed to initialize ChromeDriver on attempt {}/{}", attempt, maxAttempts, e);
+                if (attempt == maxAttempts) {
+                    throw new RuntimeException("ChromeDriver initialization failed after " + maxAttempts + " attempts", e);
+                }
+                try {
+                    Thread.sleep(2000); // Wait 2 seconds before retrying
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    logger.warn("Interrupted while waiting to retry driver initialization", ie);
+                }
+            }
         }
     }
 
@@ -209,6 +225,9 @@ public class GenericSteps {
                 logger.info("Executing test {} with data: {}", testId, dataRow);
                 if (resetDriverPerIteration) {
                     initializeDriver(options);
+                    if (driver == null) {
+                        throw new IllegalStateException("Driver is null after reinitialization for test " + testId + " with data: " + dataRow);
+                    }
                     if (startPage != null) {
                         userIsOnPage(startPage);
                     }

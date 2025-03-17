@@ -19,10 +19,11 @@ This is a highly configurable, reliable, and extensible automation testing suite
 - **CI/CD Ready**: Headless mode, WebDriverManager, and JUnit reporting for Jenkins integration.
 
 ## Prerequisites
-- **Java**: JDK 11 or higher
-- **Maven**: 3.6.0 or higher
+- **Java**: JDK 11 or higher (tested with JDK 21.0.4)
+- **Maven**: 3.6.0 or higher (tested with 3.9.8)
 - **Kafka**: A running Kafka cluster (for Kafka-related tests)
-- **Chrome**: Chrome browser (managed via WebDriverManager in CI/CD)
+- **Chrome**: Chrome browser (tested with version 134, managed via WebDriverManager 5.8.0)
+- **Node.js**: Required for the target web app (`selenium-cucumber-webapp`)
 
 ## Setup
 1. **Clone the Repository**:
@@ -39,12 +40,27 @@ This is a highly configurable, reliable, and extensible automation testing suite
 3. **Configure Environment**:
    - Copy `src/test/resources/config.dev.properties` to `config.<env>.properties` (e.g., `config.prod.properties`) and update settings:
      ```properties
-     baseUrl=https://dev.example.com
+     baseUrl=http://localhost:3000
      kafka.bootstrap.servers=localhost:9092
+     webdriver.chrome.args=--headless,--disable-gpu
+     implicitWait=20
+     defaultTimeout=30
+     retryAttempts=3
+     retryDelaySeconds=2
+     report.screenshotsOnFailure=true
      ```
    - Set the environment via `-Denv` (default: `dev`).
 
-4. **Kafka Setup** (if applicable):
+4. **Run the Web Application**:
+   - Navigate to the companion app:
+     ```bash
+     cd ../selenium-cucumber-webapp
+     npm install
+     npm start
+     ```
+   - Ensure it runs on `http://localhost:3000`.
+
+5. **Kafka Setup** (if applicable):
    - Ensure a Kafka broker is running at `kafka.bootstrap.servers`.
    - Create necessary topics (e.g., `order-created`, `order-processed`).
 
@@ -82,7 +98,11 @@ selenium-cucumber-test/
   ```
 - **Single Test**:
   ```bash
-  mvn test -Dcucumber.filter.tags="@json_upload" -Denv=dev
+  mvn test -Dcucumber.filter.tags="@login_multi_users" -Denv=dev
+  ```
+- **With Detailed Logging**:
+  ```bash
+  mvn test -X -e > output.log
   ```
 
 Reports are generated in `target/cucumber-reports.html`.
@@ -126,7 +146,7 @@ pipeline {
                     publishHTML(target: [
                         reportDir: 'target',
                         reportFiles: 'cucumber-reports.html',
-                        reportName | 'Cucumber Report'
+                        reportName: 'Cucumber Report'
                     ])
                     junit 'target/surefire-reports/*.xml'
                 }
@@ -141,9 +161,9 @@ pipeline {
 ### General Config (`config.<env>.properties`)
 | Property                  | Description                              | Default            |
 |---------------------------|------------------------------------------|--------------------|
-| `baseUrl`                 | Base URL of the application             | `https://dev.example.com` |
+| `baseUrl`                 | Base URL of the application             | `http://localhost:3000` |
 | `browser`                 | Browser type (e.g., `chrome`)           | `chrome`          |
-| `implicitWait`            | Implicit wait in seconds                | `10`              |
+| `implicitWait`            | Implicit wait in seconds                | `20`              |
 | `defaultTimeout`          | Default wait timeout in seconds         | `30`              |
 | `retryAttempts`           | Number of retry attempts                | `3`               |
 | `retryDelaySeconds`       | Delay between retries in seconds        | `2`               |
@@ -158,17 +178,39 @@ pipeline {
 ### Page Definitions (`pages/pages.properties`)
 ```properties
 page.login.path=/login
-page.login.elements.username.type=input
 page.login.elements.username.locator[0].type=id
 page.login.elements.username.locator[0].value=username
+page.login.elements.password.locator[0].type=id
+page.login.elements.password.locator[0].value=password
+page.login.elements.loginButton.locator[0].type=id
+page.login.elements.loginButton.locator[0].value=loginButton
+page.cart.path=/cart
 ```
 
 ### Test Scenarios (`tests.properties`)
 ```properties
-test.json_upload.actions[0].page=upload
-test.json_upload.actions[0].element=jsonUpload
-test.json_upload.actions[0].action=uploadFile
-test.json_upload.actions[0].value=${param.jsonFile.path}
+test.login_multi_users.description=Login with multiple users
+test.login_multi_users.dataFile=testdata/users.csv
+test.login_multi_users.resetDriverPerIteration=true
+test.login_multi_users.startPage=login
+test.login_multi_users.actions[0].action=navigate
+test.login_multi_users.actions[0].targetPage=login
+test.login_multi_users.actions[1].page=login
+test.login_multi_users.actions[1].element=username
+test.login_multi_users.actions[1].action=enter
+test.login_multi_users.actions[1].value=${data.username}
+test.login_multi_users.actions[2].page=login
+test.login_multi_users.actions[2].element=password
+test.login_multi_users.actions[2].action=enter
+test.login_multi_users.actions[2].value=${data.password}
+test.login_multi_users.actions[3].page=login
+test.login_multi_users.actions[3].element=loginButton
+test.login_multi_users.actions[3].action=click
+test.login_multi_users.actions[4].action=navigate
+test.login_multi_users.actions[4].targetPage=cart
+test.login_multi_users.assertions[0].type=url
+test.login_multi_users.assertions[0].value=/cart
+test.login_multi_users.assertions[0].condition=contains
 ```
 
 ### Test Data (`users.csv`)
@@ -183,7 +225,7 @@ user2@example.com,Pass456
 |------------------|------------------------------------------|---------------------------------------------|
 | `enter`          | Enters text into an input                | `page`, `element`, `value`                  |
 | `click`          | Clicks an element                        | `page`, `element`                           |
-| `navigate`       | Navigates to another page via click      | `page`, `element`, `targetPage`             |
+| `navigate`       | Navigates to a URL                       | `targetPage`                                |
 | `kafkaProduce`   | Sends a Kafka message                    | `kafka.topic`, `kafka.key`, `kafka.value`   |
 | `kafkaConsume`   | Consumes a Kafka message                 | `kafka.topic`, `kafka.key`, `kafka.valueContains` |
 | `restCall`       | Makes a REST API call                    | `rest.method`, `rest.url`, `rest.body`, `rest.header.*` |
@@ -199,20 +241,30 @@ user2@example.com,Pass456
 | `visible`    | Checks element visibility                | `page`, `element`, `condition` |
 | `text`       | Checks element text                      | `page`, `element`, `value`, `condition` |
 
-## Example Test: JSON Upload
+## Example Test: Login with Multiple Users
 ```properties
-test.json_upload.description=Upload JSON file to start a process
-test.json_upload.actions[0].page=upload
-test.json_upload.actions[0].element=jsonUpload
-test.json_upload.actions[0].action=uploadFile
-test.json_upload.actions[0].value=${param.jsonFile.path}
-test.json_upload.actions[1].page=upload
-test.json_upload.actions[1].element=submitButton
-test.json_upload.actions[1].action=click
-test.json_upload.assertions[0].page=upload
-test.json_upload.assertions[0].element=successMessage
-test.json_upload.assertions[0].type=visible
-test.json_upload.assertions[0].condition=true
+test.login_multi_users.description=Login with multiple users
+test.login_multi_users.dataFile=testdata/users.csv
+test.login_multi_users.resetDriverPerIteration=true
+test.login_multi_users.startPage=login
+test.login_multi_users.actions[0].action=navigate
+test.login_multi_users.actions[0].targetPage=login
+test.login_multi_users.actions[1].page=login
+test.login_multi_users.actions[1].element=username
+test.login_multi_users.actions[1].action=enter
+test.login_multi_users.actions[1].value=${data.username}
+test.login_multi_users.actions[2].page=login
+test.login_multi_users.actions[2].element=password
+test.login_multi_users.actions[2].action=enter
+test.login_multi_users.actions[2].value=${data.password}
+test.login_multi_users.actions[3].page=login
+test.login_multi_users.actions[3].element=loginButton
+test.login_multi_users.actions[3].action=click
+test.login_multi_users.actions[4].action=navigate
+test.login_multi_users.actions[4].targetPage=cart
+test.login_multi_users.assertions[0].type=url
+test.login_multi_users.assertions[0].value=/cart
+test.login_multi_users.assertions[0].condition=contains
 ```
 
 ## Extending the Suite
@@ -224,6 +276,21 @@ test.json_upload.assertions[0].condition=true
 - **Kafka Errors**: Verify broker and topics.
 - **File Uploads**: Ensure files exist at specified paths.
 - **CI/CD Issues**: Check ChromeDriver setup and network access.
+- **Navigation Timeouts**:
+  - Verify `http://localhost:3000` is responsive.
+  - Test without `--headless`:
+    ```bash
+    mvn test -Dwebdriver.chrome.args=--disable-gpu
+    ```
+  - Enable ChromeDriver logs:
+    ```java
+    System.setProperty("webdriver.chrome.logfile", "chromedriver.log");
+    ```
 
 ## Contributing
 Submit pull requests or issues to enhance the suite!
+
+## Updates
+- **March 18, 2025**:
+  - Updated `login_multi_users` assertion to use `condition=contains` for robust URL checking.
+  - Enhanced `GenericSteps.java` with navigation timeout retries and detailed logging.
