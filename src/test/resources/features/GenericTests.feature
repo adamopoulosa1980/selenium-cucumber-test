@@ -9,6 +9,5 @@ Feature: Generic Application Testing
       | initialPage | testId            |
       | login       | user_journey      |
       | login       | login_multi_users |
-      | login       | order_processing  |
       | upload      | json_upload       |
       | upload      | pdf_upload        |

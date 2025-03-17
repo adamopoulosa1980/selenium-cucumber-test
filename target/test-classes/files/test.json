@@ -1,0 +1,9 @@
+{
+    "name": "test",
+    "type": "example",
+    "version": 1.0,
+    "details": {
+      "createdBy": "Alex",
+      "timestamp": "2025-03-17T23:20:00+02:00"
+    }
+  }

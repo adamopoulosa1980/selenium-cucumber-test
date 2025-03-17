@@ -5,6 +5,10 @@
     <artifactId>selenium-cucumber-test</artifactId>
     <version>1.0-SNAPSHOT</version>
 
+    <properties>
+        <java.version>17</java.version>
+    </properties>
+
     <dependencies>
         <!-- Selenium -->
         <dependency>
@@ -12,6 +16,7 @@
             <artifactId>selenium-java</artifactId>
             <version>4.18.1</version>
         </dependency>
+
         <!-- Cucumber -->
         <dependency>
             <groupId>io.cucumber</groupId>
@@ -23,18 +28,21 @@
             <artifactId>cucumber-junit</artifactId>
             <version>7.15.0</version>
         </dependency>
+
         <!-- JUnit -->
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <version>4.13.2</version>
         </dependency>
+
         <!-- Awaitility -->
         <dependency>
             <groupId>org.awaitility</groupId>
             <artifactId>awaitility</artifactId>
             <version>4.2.0</version>
         </dependency>
+
         <!-- Logging -->
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -46,30 +54,35 @@
             <artifactId>logback-classic</artifactId>
             <version>1.2.11</version>
         </dependency>
+
         <!-- CSV Parsing -->
         <dependency>
             <groupId>com.opencsv</groupId>
             <artifactId>opencsv</artifactId>
             <version>5.7.1</version>
         </dependency>
+
         <!-- JSON Parsing -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
             <version>2.14.2</version>
         </dependency>
+
         <!-- Kafka -->
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>kafka-clients</artifactId>
             <version>3.6.0</version>
         </dependency>
-        <!-- REST Client -->
+
+        <!-- REST Client (OkHttp) -->
         <dependency>
             <groupId>com.squareup.okhttp3</groupId>
             <artifactId>okhttp</artifactId>
             <version>4.10.0</version>
         </dependency>
+
         <!-- WebDriverManager -->
         <dependency>
             <groupId>io.github.bonigarcia</groupId>
@@ -85,8 +98,8 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.8.1</version>
                 <configuration>
-                    <source>14</source>
-                    <target>14</target>
+                    <source>17</source>
+                    <target>17</target>
                 </configuration>
             </plugin>
             <plugin>

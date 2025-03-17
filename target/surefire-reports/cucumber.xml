@@ -1,98 +1,94 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="Cucumber" time="64.701" tests="5" skipped="0" failures="5" errors="0">
-<testcase classname="Generic Application Testing" name="Execute various test scenarios - Example #1.1" time="13.943">
-<failure type="org.awaitility.core.ConditionTimeoutException" message="Condition steps.GenericSteps$$Lambda/0x000002032b3df410 was not fulfilled within 9 seconds.">
-<![CDATA[org.awaitility.core.ConditionTimeoutException: Condition steps.GenericSteps$$Lambda/0x000002032b3df410 was not fulfilled within 9 seconds.
-	at org.awaitility.core.ConditionAwaiter.await(ConditionAwaiter.java:167)
-	at org.awaitility.core.CallableCondition.await(CallableCondition.java:78)
-	at org.awaitility.core.CallableCondition.await(CallableCondition.java:26)
-	at org.awaitility.core.ConditionFactory.until(ConditionFactory.java:985)
-	at org.awaitility.core.ConditionFactory.until(ConditionFactory.java:954)
-	at steps.GenericSteps.executeWithRetry(GenericSteps.java:525)
-	at steps.GenericSteps.userIsOnPage(GenericSteps.java:136)
-	at ✽.user is on the "login" page(file:///C:/Development/Sources/selenium-cucumber-test/src/test/resources/features/GenericTests.feature:4)
-]]>
-</failure>
+<testsuite name="Cucumber" time="177.964" tests="4" skipped="0" failures="1" errors="0">
+<testcase classname="Generic Application Testing" name="Execute various test scenarios - Example #1.1" time="52.078">
 <system-out><![CDATA[
-Given user is on the "login" page...........................................failed
-When user executes test "user_journey"......................................skipped
-Then results match expected outcomes for test "user_journey"................skipped
+Given user is on the "login" page...........................................passed
+When user executes test "user_journey"......................................passed
+Then results match expected outcomes for test "user_journey"................passed
 ]]></system-out>
 </testcase>
-<testcase classname="Generic Application Testing" name="Execute various test scenarios - Example #1.2" time="13.364">
-<failure type="org.awaitility.core.ConditionTimeoutException" message="Condition steps.GenericSteps$$Lambda/0x000002032b3df410 was not fulfilled within 9 seconds.">
-<![CDATA[org.awaitility.core.ConditionTimeoutException: Condition steps.GenericSteps$$Lambda/0x000002032b3df410 was not fulfilled within 9 seconds.
+<testcase classname="Generic Application Testing" name="Execute various test scenarios - Example #1.2" time="72.329">
+<failure type="org.awaitility.core.ConditionTimeoutException" message="Condition steps.GenericSteps$$Lambda/0x0000023a5834c400 was not fulfilled within 30 seconds.">
+<![CDATA[org.awaitility.core.ConditionTimeoutException: Condition steps.GenericSteps$$Lambda/0x0000023a5834c400 was not fulfilled within 30 seconds.
 	at org.awaitility.core.ConditionAwaiter.await(ConditionAwaiter.java:167)
 	at org.awaitility.core.CallableCondition.await(CallableCondition.java:78)
 	at org.awaitility.core.CallableCondition.await(CallableCondition.java:26)
 	at org.awaitility.core.ConditionFactory.until(ConditionFactory.java:985)
 	at org.awaitility.core.ConditionFactory.until(ConditionFactory.java:954)
-	at steps.GenericSteps.executeWithRetry(GenericSteps.java:525)
-	at steps.GenericSteps.userIsOnPage(GenericSteps.java:136)
-	at ✽.user is on the "login" page(file:///C:/Development/Sources/selenium-cucumber-test/src/test/resources/features/GenericTests.feature:4)
+	at steps.GenericSteps.executeWithRetry(GenericSteps.java:598)
+	at steps.GenericSteps.executeActions(GenericSteps.java:195)
+	at steps.GenericSteps.userExecutesTest(GenericSteps.java:179)
+	at ✽.user executes test "login_multi_users"(file:///C:/Development/Sources/selenium-cucumber-test/src/test/resources/features/GenericTests.feature:5)
+Caused by: java.util.concurrent.TimeoutException
+	at java.base/java.util.concurrent.FutureTask.get(FutureTask.java:204)
+	at org.awaitility.core.Uninterruptibles.getUninterruptibly(Uninterruptibles.java:101)
+	at org.awaitility.core.Uninterruptibles.getUninterruptibly(Uninterruptibles.java:81)
+	at org.awaitility.core.ConditionAwaiter.await(ConditionAwaiter.java:103)
+	at org.awaitility.core.CallableCondition.await(CallableCondition.java:78)
+	at org.awaitility.core.CallableCondition.await(CallableCondition.java:26)
+	at org.awaitility.core.ConditionFactory.until(ConditionFactory.java:985)
+	at org.awaitility.core.ConditionFactory.until(ConditionFactory.java:954)
+	at steps.GenericSteps.executeWithRetry(GenericSteps.java:598)
+	at steps.GenericSteps.executeActions(GenericSteps.java:195)
+	at steps.GenericSteps.userExecutesTest(GenericSteps.java:179)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at io.cucumber.java.Invoker.doInvoke(Invoker.java:66)
+	at io.cucumber.java.Invoker.invoke(Invoker.java:24)
+	at io.cucumber.java.AbstractGlueDefinition.invokeMethod(AbstractGlueDefinition.java:47)
+	at io.cucumber.java.JavaStepDefinition.execute(JavaStepDefinition.java:29)
+	at io.cucumber.core.runner.CoreStepDefinition.execute(CoreStepDefinition.java:66)
+	at io.cucumber.core.runner.PickleStepDefinitionMatch.runStep(PickleStepDefinitionMatch.java:63)
+	at io.cucumber.core.runner.ExecutionMode$1.execute(ExecutionMode.java:10)
+	at io.cucumber.core.runner.TestStep.executeStep(TestStep.java:84)
+	at io.cucumber.core.runner.TestStep.run(TestStep.java:56)
+	at io.cucumber.core.runner.PickleStepTestStep.run(PickleStepTestStep.java:51)
+	at io.cucumber.core.runner.TestCase.run(TestCase.java:84)
+	at io.cucumber.core.runner.Runner.runPickle(Runner.java:75)
+	at io.cucumber.junit.PickleRunners$NoStepDescriptions.lambda$run$0(PickleRunners.java:151)
+	at io.cucumber.core.runtime.CucumberExecutionContext.lambda$runTestCase$5(CucumberExecutionContext.java:137)
+	at io.cucumber.core.runtime.RethrowingThrowableCollector.executeAndThrow(RethrowingThrowableCollector.java:23)
+	at io.cucumber.core.runtime.CucumberExecutionContext.runTestCase(CucumberExecutionContext.java:137)
+	at io.cucumber.junit.PickleRunners$NoStepDescriptions.run(PickleRunners.java:148)
+	at io.cucumber.junit.FeatureRunner.runChild(FeatureRunner.java:144)
+	at io.cucumber.junit.FeatureRunner.runChild(FeatureRunner.java:28)
+	at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
+	at org.junit.runners.ParentRunner$1.schedule(ParentRunner.java:79)
+	at org.junit.runners.ParentRunner.runChildren(ParentRunner.java:329)
+	at org.junit.runners.ParentRunner.access$100(ParentRunner.java:66)
+	at org.junit.runners.ParentRunner$2.evaluate(ParentRunner.java:293)
+	at org.junit.runners.ParentRunner$3.evaluate(ParentRunner.java:306)
+	at org.junit.runners.ParentRunner.run(ParentRunner.java:413)
+	at io.cucumber.junit.FeatureRunner.run(FeatureRunner.java:137)
+	at io.cucumber.junit.Cucumber.runChild(Cucumber.java:196)
+	at io.cucumber.junit.Cucumber.runChild(Cucumber.java:89)
+	at org.junit.runners.ParentRunner$4.run(ParentRunner.java:331)
+	at org.apache.maven.surefire.junitcore.pc.Scheduler$1.run(Scheduler.java:405)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:572)
+	at java.base/java.util.concurrent.FutureTask.run(FutureTask.java:317)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
 ]]>
 </failure>
 <system-out><![CDATA[
-Given user is on the "login" page...........................................failed
-When user executes test "login_multi_users".................................skipped
+Given user is on the "login" page...........................................passed
+When user executes test "login_multi_users".................................failed
 Then results match expected outcomes for test "login_multi_users"...........skipped
 ]]></system-out>
 </testcase>
-<testcase classname="Generic Application Testing" name="Execute various test scenarios - Example #1.3" time="13.396">
-<failure type="org.awaitility.core.ConditionTimeoutException" message="Condition steps.GenericSteps$$Lambda/0x000002032b3df410 was not fulfilled within 9 seconds.">
-<![CDATA[org.awaitility.core.ConditionTimeoutException: Condition steps.GenericSteps$$Lambda/0x000002032b3df410 was not fulfilled within 9 seconds.
-	at org.awaitility.core.ConditionAwaiter.await(ConditionAwaiter.java:167)
-	at org.awaitility.core.CallableCondition.await(CallableCondition.java:78)
-	at org.awaitility.core.CallableCondition.await(CallableCondition.java:26)
-	at org.awaitility.core.ConditionFactory.until(ConditionFactory.java:985)
-	at org.awaitility.core.ConditionFactory.until(ConditionFactory.java:954)
-	at steps.GenericSteps.executeWithRetry(GenericSteps.java:525)
-	at steps.GenericSteps.userIsOnPage(GenericSteps.java:136)
-	at ✽.user is on the "login" page(file:///C:/Development/Sources/selenium-cucumber-test/src/test/resources/features/GenericTests.feature:4)
-]]>
-</failure>
+<testcase classname="Generic Application Testing" name="Execute various test scenarios - Example #1.3" time="29.258">
 <system-out><![CDATA[
-Given user is on the "login" page...........................................failed
-When user executes test "order_processing"..................................skipped
-Then results match expected outcomes for test "order_processing"............skipped
+Given user is on the "upload" page..........................................passed
+When user executes test "json_upload".......................................passed
+Then results match expected outcomes for test "json_upload".................passed
 ]]></system-out>
 </testcase>
-<testcase classname="Generic Application Testing" name="Execute various test scenarios - Example #1.4" time="12.074">
-<failure type="org.awaitility.core.ConditionTimeoutException" message="Condition steps.GenericSteps$$Lambda/0x000002032b3df410 was not fulfilled within 9 seconds.">
-<![CDATA[org.awaitility.core.ConditionTimeoutException: Condition steps.GenericSteps$$Lambda/0x000002032b3df410 was not fulfilled within 9 seconds.
-	at org.awaitility.core.ConditionAwaiter.await(ConditionAwaiter.java:167)
-	at org.awaitility.core.CallableCondition.await(CallableCondition.java:78)
-	at org.awaitility.core.CallableCondition.await(CallableCondition.java:26)
-	at org.awaitility.core.ConditionFactory.until(ConditionFactory.java:985)
-	at org.awaitility.core.ConditionFactory.until(ConditionFactory.java:954)
-	at steps.GenericSteps.executeWithRetry(GenericSteps.java:525)
-	at steps.GenericSteps.userIsOnPage(GenericSteps.java:136)
-	at ✽.user is on the "upload" page(file:///C:/Development/Sources/selenium-cucumber-test/src/test/resources/features/GenericTests.feature:4)
-]]>
-</failure>
+<testcase classname="Generic Application Testing" name="Execute various test scenarios - Example #1.4" time="24.218">
 <system-out><![CDATA[
-Given user is on the "upload" page..........................................failed
-When user executes test "json_upload".......................................skipped
-Then results match expected outcomes for test "json_upload".................skipped
-]]></system-out>
-</testcase>
-<testcase classname="Generic Application Testing" name="Execute various test scenarios - Example #1.5" time="11.841">
-<failure type="org.awaitility.core.ConditionTimeoutException" message="Condition steps.GenericSteps$$Lambda/0x000002032b3df410 was not fulfilled within 9 seconds.">
-<![CDATA[org.awaitility.core.ConditionTimeoutException: Condition steps.GenericSteps$$Lambda/0x000002032b3df410 was not fulfilled within 9 seconds.
-	at org.awaitility.core.ConditionAwaiter.await(ConditionAwaiter.java:167)
-	at org.awaitility.core.CallableCondition.await(CallableCondition.java:78)
-	at org.awaitility.core.CallableCondition.await(CallableCondition.java:26)
-	at org.awaitility.core.ConditionFactory.until(ConditionFactory.java:985)
-	at org.awaitility.core.ConditionFactory.until(ConditionFactory.java:954)
-	at steps.GenericSteps.executeWithRetry(GenericSteps.java:525)
-	at steps.GenericSteps.userIsOnPage(GenericSteps.java:136)
-	at ✽.user is on the "upload" page(file:///C:/Development/Sources/selenium-cucumber-test/src/test/resources/features/GenericTests.feature:4)
-]]>
-</failure>
-<system-out><![CDATA[
-Given user is on the "upload" page..........................................failed
-When user executes test "pdf_upload"........................................skipped
-Then results match expected outcomes for test "pdf_upload"..................skipped
+Given user is on the "upload" page..........................................passed
+When user executes test "pdf_upload"........................................passed
+Then results match expected outcomes for test "pdf_upload"..................passed
 ]]></system-out>
 </testcase>
 </testsuite>

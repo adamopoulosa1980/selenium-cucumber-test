@@ -173,12 +173,12 @@ public class ConfigManager {
     }
 
     public static String resolveParameters(String value, Map<String, String> additionalParams) {
-        if (value == null) {
-            return null;
+        if (value == null || !value.contains("${")) {
+            return value; // Quick exit if no parameters
         }
-        Pattern pattern = Pattern.compile("\\${(.*?)}");
-        Matcher matcher = pattern.matcher(value);
         String result = value;
+        Pattern pattern = Pattern.compile("\\$\\{([^}]+)\\}"); // Simplified pattern
+        Matcher matcher = pattern.matcher(value);
         while (matcher.find()) {
             String paramKey = matcher.group(1);
             String paramValue = null;

@@ -64,17 +64,22 @@ public class GenericSteps {
     private KafkaProducer<String, String> kafkaProducer;
     private KafkaConsumer<String, String> kafkaConsumer;
     private OkHttpClient httpClient;
+    private boolean kafkaEnabled;
 
     @Before
     public void setUp(Scenario scenario) {
         this.scenario = scenario;
+        logger.info("Starting setup for scenario: {}", scenario.getName());
         WebDriverManager.chromedriver().setup();
         ChromeOptions options = new ChromeOptions();
         String chromeArgs = ConfigManager.getConfig("webdriver.chrome.args");
-        if (chromeArgs != null) {
+        logger.debug("Chrome arguments: {}", chromeArgs);
+        if (chromeArgs != null && !chromeArgs.isEmpty()) {
             options.addArguments(chromeArgs.split(","));
         }
+        logger.debug("Initializing ChromeDriver");
         driver = new ChromeDriver(options);
+        logger.debug("Setting implicit wait to {} seconds", ConfigManager.getConfig("implicitWait"));
         driver.manage().timeouts().implicitlyWait(
                 Long.parseLong(ConfigManager.getConfig("implicitWait")),
                 TimeUnit.SECONDS
@@ -82,30 +87,37 @@ public class GenericSteps {
         retryAttempts = Integer.parseInt(ConfigManager.getConfig("retryAttempts"));
         retryDelaySeconds = Integer.parseInt(ConfigManager.getConfig("retryDelaySeconds"));
 
-        Properties producerProps = new Properties();
-        producerProps.put("bootstrap.servers", ConfigManager.getConfig("kafka.bootstrap.servers"));
-        producerProps.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
-        producerProps.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
-        kafkaProducer = new KafkaProducer<>(producerProps);
+        kafkaEnabled = Boolean.parseBoolean(ConfigManager.getConfig("kafka.enabled"));
+        logger.debug("Kafka enabled: {}", kafkaEnabled);
+        if (kafkaEnabled) {
+            Properties producerProps = new Properties();
+            producerProps.put("bootstrap.servers", ConfigManager.getConfig("kafka.bootstrap.servers"));
+            producerProps.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+            producerProps.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+            kafkaProducer = new KafkaProducer<>(producerProps);
 
-        Properties consumerProps = new Properties();
-        consumerProps.put("bootstrap.servers", ConfigManager.getConfig("kafka.bootstrap.servers"));
-        consumerProps.put("group.id", ConfigManager.getConfig("kafka.group.id"));
-        consumerProps.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
-        consumerProps.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
-        consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest");
-        kafkaConsumer = new KafkaConsumer<>(consumerProps);
+            Properties consumerProps = new Properties();
+            consumerProps.put("bootstrap.servers", ConfigManager.getConfig("kafka.bootstrap.servers"));
+            consumerProps.put("group.id", ConfigManager.getConfig("kafka.group.id"));
+            consumerProps.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+            consumerProps.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+            consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "latest");
+            kafkaConsumer = new KafkaConsumer<>(consumerProps);
+        } else {
+            logger.info("Kafka is disabled; skipping Kafka initialization");
+        }
 
         httpClient = new OkHttpClient.Builder()
                 .connectTimeout(Duration.ofSeconds(Integer.parseInt(ConfigManager.getConfig("rest.timeout.seconds"))))
                 .readTimeout(Duration.ofSeconds(Integer.parseInt(ConfigManager.getConfig("rest.timeout.seconds"))))
                 .build();
 
-        logger.info("Starting scenario: {}", scenario.getName());
+        logger.info("Setup completed for scenario: {}", scenario.getName());
     }
 
     @After
     public void tearDown() {
+        logger.info("Tearing down scenario: {}", scenario.getName());
         if (driver != null) {
             if (scenario.isFailed() && Boolean.parseBoolean(ConfigManager.getConfig("report.screenshotsOnFailure"))) {
                 try {
@@ -119,11 +131,13 @@ public class GenericSteps {
             }
             driver.quit();
         }
-        if (kafkaProducer != null) {
-            kafkaProducer.close();
-        }
-        if (kafkaConsumer != null) {
-            kafkaConsumer.close();
+        if (kafkaEnabled) {
+            if (kafkaProducer != null) {
+                kafkaProducer.close();
+            }
+            if (kafkaConsumer != null) {
+                kafkaConsumer.close();
+            }
         }
         if (httpClient != null) {
             httpClient.dispatcher().executorService().shutdown();
@@ -133,22 +147,31 @@ public class GenericSteps {
     @Given("user is on the {string} page")
     public void userIsOnPage(String pageId) {
         String url = ConfigManager.getConfig("baseUrl") + ConfigManager.getPageProperty(pageId, "path");
+        String expectedPath = ConfigManager.getPageProperty(pageId, "path");
+        logger.info("Navigating to page: {} at URL: {}, expecting path: {}", pageId, url, expectedPath);
         executeWithRetry(() -> {
-            logger.debug("Navigating to: {}", url);
+            logger.debug("Loading URL: {}", url);
             driver.get(url);
             Awaitility.await()
-                    .atMost(Duration.ofSeconds(getTimeout(null)))
-                    .until(() -> driver.getCurrentUrl().contains(ConfigManager.getPageProperty(pageId, "path")));
+                    .atMost(Duration.ofSeconds(30))
+                    .pollInterval(Duration.ofSeconds(1))
+                    .until(() -> {
+                        String currentUrl = driver.getCurrentUrl();
+                        logger.debug("Current URL: {}, expecting path: {}", currentUrl, expectedPath);
+                        return currentUrl.contains(expectedPath);
+                    });
             loadPageElements(pageId, null);
         });
     }
 
     @When("user executes test {string}")
     public void userExecutesTest(String testId) {
+        logger.info("Starting test execution: {}", testId);
         List<Map<String, String>> testData = ConfigManager.getTestData(testId);
         List<Map<String, String>> actions = ConfigManager.getTestActions(testId);
 
         if (testData == null) {
+            logger.debug("No test data found, executing actions directly");
             executeActions(actions, null);
         } else {
             for (Map<String, String> dataRow : testData) {
@@ -168,6 +191,7 @@ public class GenericSteps {
             String value = ConfigManager.resolveParameters(action.get("value"), data);
             String targetPage = action.get("targetPage");
 
+            logger.debug("Processing action index {}: {}", actionIndex.get(), action);
             executeWithRetry(() -> {
                 logger.debug("Executing action: {}", action);
                 applyWait(action, pageId, elementId, data);
@@ -178,16 +202,29 @@ public class GenericSteps {
 
                 switch (actionType) {
                     case "enter":
+                        logger.debug("Attempting to enter value '{}' into element '{}'", value, elementId);
+                        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+                        wait.until(ExpectedConditions.elementToBeClickable(element));
                         element.clear();
                         element.sendKeys(value);
                         Awaitility.await()
                                 .atMost(Duration.ofSeconds(2))
-                                .until(() -> element.getAttribute("value").equals(value));
+                                .until(() -> {
+                                    String currentValue = element.getAttribute("value");
+                                    logger.debug("Current value in element '{}': '{}'", elementId, currentValue);
+                                    return currentValue.equals(value);
+                                });
                         break;
                     case "click":
+                        logger.debug("Attempting to click element '{}'", elementId);
+                        wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+                        wait.until(ExpectedConditions.elementToBeClickable(element));
                         element.click();
                         break;
                     case "select":
+                        logger.debug("Selecting value '{}' in element '{}'", value, elementId);
+                        wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+                        wait.until(ExpectedConditions.elementToBeClickable(element));
                         Select select = new Select(element);
                         select.selectByVisibleText(value);
                         Awaitility.await()
@@ -195,26 +232,41 @@ public class GenericSteps {
                                 .until(() -> select.getFirstSelectedOption().getText().equals(value));
                         break;
                     case "hover":
+                        logger.debug("Hovering over element '{}'", elementId);
                         new org.openqa.selenium.interactions.Actions(driver)
                                 .moveToElement(element)
                                 .perform();
                         break;
                     case "clear":
+                        logger.debug("Clearing element '{}'", elementId);
+                        wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+                        wait.until(ExpectedConditions.elementToBeClickable(element));
                         element.clear();
                         Awaitility.await()
                                 .atMost(Duration.ofSeconds(2))
                                 .until(() -> element.getAttribute("value").isEmpty());
                         break;
                     case "submit":
+                        logger.debug("Submitting form with element '{}'", elementId);
+                        wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+                        wait.until(ExpectedConditions.elementToBeClickable(element));
                         element.submit();
                         break;
                     case "doubleClick":
+                        logger.debug("Double-clicking element '{}'", elementId);
+                        wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+                        wait.until(ExpectedConditions.elementToBeClickable(element));
                         new org.openqa.selenium.interactions.Actions(driver)
                                 .doubleClick(element)
                                 .perform();
                         break;
                     case "navigate":
-                        element.click();
+                        logger.debug("Navigating to target page '{}'", targetPage);
+                        if (element != null) {
+                            wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+                            wait.until(ExpectedConditions.elementToBeClickable(element));
+                            element.click();
+                        }
                         String targetPath = ConfigManager.getPageProperty(targetPage, "path");
                         Awaitility.await()
                                 .atMost(Duration.ofSeconds(getTimeout(action)))
@@ -222,6 +274,7 @@ public class GenericSteps {
                         loadPageElements(targetPage, action);
                         break;
                     case "check":
+                        logger.debug("Checking condition for element '{}'", elementId);
                         boolean conditionMet = checkCondition(element, action.get("condition"));
                         int nextIndex = Integer.parseInt(conditionMet
                                 ? action.get("ifTrue.nextAction") : action.get("ifFalse.nextAction"));
@@ -241,6 +294,10 @@ public class GenericSteps {
                         }
                         break;
                     case "kafkaProduce":
+                        if (!kafkaEnabled) {
+                            logger.info("Kafka is disabled; skipping kafkaProduce action");
+                            return;
+                        }
                         String topic = action.get("kafka.topic");
                         String key = ConfigManager.resolveParameters(action.get("kafka.key"), data);
                         String message = ConfigManager.resolveParameters(action.get("kafka.value"), data);
@@ -249,6 +306,10 @@ public class GenericSteps {
                         logger.debug("Produced Kafka message to {}: key={}, value={}", topic, key, message);
                         break;
                     case "kafkaConsume":
+                        if (!kafkaEnabled) {
+                            logger.info("Kafka is disabled; skipping kafkaConsume action");
+                            return;
+                        }
                         String consumeTopic = action.get("kafka.topic");
                         String expectedKey = ConfigManager.resolveParameters(action.get("kafka.key"), data);
                         String expectedValueContains = ConfigManager.resolveParameters(action.get("kafka.valueContains"), data);
@@ -300,8 +361,10 @@ public class GenericSteps {
                         if (!file.exists()) {
                             throw new IllegalArgumentException("File not found: " + value);
                         }
+                        logger.debug("Uploading file '{}' to element '{}'", value, elementId);
+                        wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+                        wait.until(ExpectedConditions.elementToBeClickable(element));
                         element.sendKeys(file.getAbsolutePath());
-                        logger.debug("Uploaded file: {}", value);
                         break;
                     default:
                         throw new IllegalArgumentException("Unsupported action: " + actionType);
@@ -338,13 +401,19 @@ public class GenericSteps {
                 logger.debug("Verifying assertion: {}", assertion);
                 applyWait(assertion, pageId, elementId, data);
 
+                // Reload page elements before assertion to avoid staleness
+                if (elementId != null && pageId != null) {
+                    loadPageElements(pageId, assertion);
+                }
+
                 switch (type) {
                     case "url":
                         String currentUrl = driver.getCurrentUrl();
                         assertCondition(currentUrl, value, condition, "URL");
                         break;
                     case "visible":
-                        boolean isVisible = pages.get(pageId).get(elementId).isDisplayed();
+                        WebElement element = pages.get(pageId).get(elementId);
+                        boolean isVisible = element.isDisplayed();
                         assertCondition(isVisible, Boolean.parseBoolean(value), condition, "visibility");
                         break;
                     case "text":
@@ -382,7 +451,11 @@ public class GenericSteps {
                     By by = getLocator(locator);
                     Awaitility.await()
                             .atMost(Duration.ofSeconds(getTimeout(null)))
-                            .until(() -> driver.findElements(by).size() > 0);
+                            .until(() -> {
+                                List<WebElement> foundElements = driver.findElements(by);
+                                logger.debug("Found {} elements for locator {} on page {}", foundElements.size(), by, pageId);
+                                return foundElements.size() > 0;
+                            });
                     element = driver.findElement(by);
                     break;
                 } catch (Exception e) {

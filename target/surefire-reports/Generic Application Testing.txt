@@ -1,19 +1,8 @@
 -------------------------------------------------------------------------------
 Test set: Generic Application Testing
 -------------------------------------------------------------------------------
-Tests run: 5, Failures: 0, Errors: 5, Skipped: 0, Time elapsed: 64.659 s <<< FAILURE! - in Generic Application Testing
-Generic Application Testing.Execute various test scenarios #1  Time elapsed: 13.977 s  <<< ERROR!
-org.awaitility.core.ConditionTimeoutException: Condition steps.GenericSteps$$Lambda/0x000002032b3df410 was not fulfilled within 9 seconds.
-
-Generic Application Testing.Execute various test scenarios #2  Time elapsed: 13.366 s  <<< ERROR!
-org.awaitility.core.ConditionTimeoutException: Condition steps.GenericSteps$$Lambda/0x000002032b3df410 was not fulfilled within 9 seconds.
-
-Generic Application Testing.Execute various test scenarios #3  Time elapsed: 13.397 s  <<< ERROR!
-org.awaitility.core.ConditionTimeoutException: Condition steps.GenericSteps$$Lambda/0x000002032b3df410 was not fulfilled within 9 seconds.
-
-Generic Application Testing.Execute various test scenarios #4  Time elapsed: 12.076 s  <<< ERROR!
-org.awaitility.core.ConditionTimeoutException: Condition steps.GenericSteps$$Lambda/0x000002032b3df410 was not fulfilled within 9 seconds.
-
-Generic Application Testing.Execute various test scenarios #5  Time elapsed: 11.842 s  <<< ERROR!
-org.awaitility.core.ConditionTimeoutException: Condition steps.GenericSteps$$Lambda/0x000002032b3df410 was not fulfilled within 9 seconds.
+Tests run: 4, Failures: 0, Errors: 1, Skipped: 0, Time elapsed: 177.923 s <<< FAILURE! - in Generic Application Testing
+Generic Application Testing.Execute various test scenarios #2  Time elapsed: 72.332 s  <<< ERROR!
+org.awaitility.core.ConditionTimeoutException: Condition steps.GenericSteps$$Lambda/0x0000023a5834c400 was not fulfilled within 30 seconds.
+Caused by: java.util.concurrent.TimeoutException
 
