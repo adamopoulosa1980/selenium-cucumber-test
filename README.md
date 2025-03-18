@@ -3,6 +3,7 @@
 This is a highly configurable, reliable, and extensible automation testing suite built with Selenium, Cucumber, and Java. It is designed to test web applications, including those interacting with external systems via Kafka events and REST APIs, while supporting complex user journeys, file uploads, and dynamic test scenarios. The suite is CI/CD-friendly and integrates seamlessly with Jenkins pipelines.
 
 ## Features
+
 - **100% Configurable**: Define pages, elements, tests, and external interactions in properties files—no code changes required.
 - **Reliable**: Uses Awaitility for robust waits and a retry mechanism to handle transient failures.
 - **User Journey Support**: Simulates navigation through multiple pages via configurable actions.
@@ -19,6 +20,7 @@ This is a highly configurable, reliable, and extensible automation testing suite
 - **CI/CD Ready**: Headless mode, WebDriverManager, and JUnit reporting for Jenkins integration.
 
 ## Prerequisites
+
 - **Java**: JDK 11 or higher (tested with JDK 21.0.4)
 - **Maven**: 3.6.0 or higher (tested with 3.9.8)
 - **Kafka**: A running Kafka cluster (for Kafka-related tests)
@@ -26,6 +28,7 @@ This is a highly configurable, reliable, and extensible automation testing suite
 - **Node.js**: Required for the target web app (`selenium-cucumber-webapp`)
 
 ## Setup
+
 1. **Clone the Repository**:
    ```bash
    git clone <repository-url>
@@ -65,6 +68,7 @@ This is a highly configurable, reliable, and extensible automation testing suite
    - Create necessary topics (e.g., `order-created`, `order-processed`).
 
 ## Project Structure
+
 ```
 selenium-cucumber-test/
 ├── src/
@@ -88,18 +92,22 @@ selenium-cucumber-test/
 ```
 
 ## Running Tests
+
 - **Default (dev environment)**:
   ```bash
   mvn test
   ```
+
 - **Specific Environment**:
   ```bash
   mvn test -Denv=prod
   ```
+
 - **Single Test**:
   ```bash
   mvn test -Dcucumber.filter.tags="@login_multi_users" -Denv=dev
   ```
+
 - **With Detailed Logging**:
   ```bash
   mvn test -X -e > output.log
@@ -108,6 +116,7 @@ selenium-cucumber-test/
 Reports are generated in `target/cucumber-reports.html`.
 
 ## CI/CD Integration (Jenkins)
+
 1. **Pipeline Setup**:
    - Use the provided `Jenkinsfile` for a basic pipeline.
    - Configure Jenkins with Maven and JDK tools.
@@ -118,47 +127,48 @@ Reports are generated in `target/cucumber-reports.html`.
    ```
 
 3. **Sample Jenkinsfile**:
-```groovy
-pipeline {
-    agent any
-    tools {
-        maven 'Maven'
-        jdk 'JDK11'
-    }
-    stages {
-        stage('Checkout') {
-            steps {
-                git url: '<repository-url>', branch: 'main'
-            }
-        }
-        stage('Build') {
-            steps {
-                sh 'mvn clean install -DskipTests'
-            }
-        }
-        stage('Run Tests') {
-            steps {
-                sh 'mvn test -Denv=dev -Dbrowser=chrome -Dcucumber.options="--tags @smoke" -Dwebdriver.chrome.args=--headless,--disable-gpu'
-            }
-            post {
-                always {
-                    archiveArtifacts artifacts: 'target/cucumber-reports.html', allowEmptyArchive: true
-                    publishHTML(target: [
-                        reportDir: 'target',
-                        reportFiles: 'cucumber-reports.html',
-                        reportName: 'Cucumber Report'
-                    ])
-                    junit 'target/surefire-reports/*.xml'
-                }
-            }
-        }
-    }
-}
-```
+   ```groovy
+   pipeline {
+       agent any
+       tools {
+           maven 'Maven'
+           jdk 'JDK11'
+       }
+       stages {
+           stage('Checkout') {
+               steps {
+                   git url: '<repository-url>', branch: 'main'
+               }
+           }
+           stage('Build') {
+               steps {
+                   sh 'mvn clean install -DskipTests'
+               }
+           }
+           stage('Run Tests') {
+               steps {
+                   sh 'mvn test -Denv=dev -Dbrowser=chrome -Dcucumber.options="--tags @smoke" -Dwebdriver.chrome.args=--headless,--disable-gpu'
+               }
+               post {
+                   always {
+                       archiveArtifacts artifacts: 'target/cucumber-reports.html', allowEmptyArchive: true
+                       publishHTML(target: [
+                           reportDir: 'target',
+                           reportFiles: 'cucumber-reports.html',
+                           reportName: 'Cucumber Report'
+                       ])
+                       junit 'target/surefire-reports/*.xml'
+                   }
+               }
+           }
+       }
+   }
+   ```
 
 ## Configuration
 
 ### General Config (`config.<env>.properties`)
+
 | Property                  | Description                              | Default            |
 |---------------------------|------------------------------------------|--------------------|
 | `baseUrl`                 | Base URL of the application             | `http://localhost:3000` |
@@ -176,6 +186,7 @@ pipeline {
 | `webdriver.chrome.args`   | ChromeDriver arguments (e.g., headless) | `--headless,--disable-gpu` |
 
 ### Page Definitions (`pages/pages.properties`)
+
 ```properties
 page.login.path=/login
 page.login.elements.username.locator[0].type=id
@@ -188,6 +199,7 @@ page.cart.path=/cart
 ```
 
 ### Test Scenarios (`tests.properties`)
+
 ```properties
 test.login_multi_users.description=Login with multiple users
 test.login_multi_users.dataFile=testdata/users.csv
@@ -214,6 +226,7 @@ test.login_multi_users.assertions[0].condition=contains
 ```
 
 ### Test Data (`users.csv`)
+
 ```csv
 username,password
 user1@example.com,Pass123
@@ -221,6 +234,7 @@ user2@example.com,Pass456
 ```
 
 ## Supported Actions
+
 | Action           | Description                              | Properties                                  |
 |------------------|------------------------------------------|---------------------------------------------|
 | `enter`          | Enters text into an input                | `page`, `element`, `value`                  |
@@ -235,6 +249,7 @@ user2@example.com,Pass456
 | `uploadFile`     | Uploads a file to an input element       | `page`, `element`, `value` (file path)      |
 
 ## Supported Assertions
+
 | Type         | Description                              | Properties              |
 |--------------|------------------------------------------|-------------------------|
 | `url`        | Checks current URL                       | `value`, `condition`    |
@@ -242,6 +257,7 @@ user2@example.com,Pass456
 | `text`       | Checks element text                      | `page`, `element`, `value`, `condition` |
 
 ## Example Test: Login with Multiple Users
+
 ```properties
 test.login_multi_users.description=Login with multiple users
 test.login_multi_users.dataFile=testdata/users.csv
@@ -268,11 +284,13 @@ test.login_multi_users.assertions[0].condition=contains
 ```
 
 ## Extending the Suite
+
 1. **Add a New Page**: Update `pages.properties`.
 2. **Add a New Test**: Define in `tests.properties`.
 3. **Add Test Data**: Use CSV/JSON files.
 
 ## Troubleshooting
+
 - **Kafka Errors**: Verify broker and topics.
 - **File Uploads**: Ensure files exist at specified paths.
 - **CI/CD Issues**: Check ChromeDriver setup and network access.
@@ -288,9 +306,42 @@ test.login_multi_users.assertions[0].condition=contains
     ```
 
 ## Contributing
+
 Submit pull requests or issues to enhance the suite!
 
 ## Updates
+
 - **March 18, 2025**:
   - Updated `login_multi_users` assertion to use `condition=contains` for robust URL checking.
   - Enhanced `GenericSteps.java` with navigation timeout retries and detailed logging.
+
+## Plan for Explanation
+
+To provide a comprehensive explanation of the project, we can create a markdown file that includes:
+
+1. **Project Overview**
+2. **Key Features**
+3. **Prerequisites**
+4. **Setup Instructions**
+5. **Project Structure**
+6. **Running Tests**
+7. **CI/CD Integration**
+8. **Configuration Details**
+9. **Supported Actions and Assertions**
+10. **Example Test Scenarios**
+11. **Troubleshooting Tips**
+
+### Mermaid Diagram
+
+```mermaid
+graph TD;
+    A[Project Overview] --> B[Key Features];
+    A --> C[Prerequisites];
+    A --> D[Setup Instructions];
+    A --> E[Project Structure];
+    A --> F[Running Tests];
+    A --> G[CI/CD Integration];
+    A --> H[Configuration Details];
+    A --> I[Supported Actions and Assertions];
+    A --> J[Example Test Scenarios];
+    A --> K[Troubleshooting Tips];
