@@ -315,33 +315,5 @@ Submit pull requests or issues to enhance the suite!
   - Updated `login_multi_users` assertion to use `condition=contains` for robust URL checking.
   - Enhanced `GenericSteps.java` with navigation timeout retries and detailed logging.
 
-## Plan for Explanation
-
-To provide a comprehensive explanation of the project, we can create a markdown file that includes:
-
-1. **Project Overview**
-2. **Key Features**
-3. **Prerequisites**
-4. **Setup Instructions**
-5. **Project Structure**
-6. **Running Tests**
-7. **CI/CD Integration**
-8. **Configuration Details**
-9. **Supported Actions and Assertions**
-10. **Example Test Scenarios**
-11. **Troubleshooting Tips**
-
-### Mermaid Diagram
-
-```mermaid
-graph TD;
-    A[Project Overview] --> B[Key Features];
-    A --> C[Prerequisites];
-    A --> D[Setup Instructions];
-    A --> E[Project Structure];
-    A --> F[Running Tests];
-    A --> G[CI/CD Integration];
-    A --> H[Configuration Details];
-    A --> I[Supported Actions and Assertions];
-    A --> J[Example Test Scenarios];
-    A --> K[Troubleshooting Tips];
+## License
+MIT License.
